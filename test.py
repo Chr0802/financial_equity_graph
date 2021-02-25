@@ -1,5 +1,6 @@
 from EntityNode import EntityNode
 from EquityEdge import EquityEdge, PseudoEdge
+import math
 
 # 层序遍历同时利用拓扑排序得到识别出受环路影响的节点 并利用dfs识别出环路
 def levelOrder3(root: EntityNode):
@@ -60,6 +61,8 @@ def levelOrder3(root: EntityNode):
 
     canddt_set = set([node_dic[key] for key in dg_dic.keys()])
     cycles = cycleDetect(canddt_set)
+    for cycle in cycles:
+        handleCycle(cycle)
 
     return res,cycles
 
@@ -91,9 +94,12 @@ def findCycle(node):
     cycle = [] # 环路列表
     visited = set() # 已经访问过的节点集合
     def dfs(node):
-        isCycle = node.name in path
-        cycleIndex = path.index(node.name) if isCycle else -1
-        path.append(node.name)
+        # isCycle = node.name in path
+        # cycleIndex = path.index(node.name) if isCycle else -1
+        # path.append(node.name)
+        isCycle = node in path
+        cycleIndex = path.index(node) if isCycle else -1
+        path.append(node)
         visited.add(node)
         # print(path)
         if isCycle:
@@ -113,6 +119,22 @@ def findCycle(node):
     dfs(node)
     return (nomal, cycle, visited)
 
+def handleCycle(nodes):
+    sigma_lnw = 0
+    n_e_dict = {}
+    effected_nodes = set()
+    for node in nodes:
+        node.v, node.u, node.key_l = 0, 0, 'inf'
+        for edge in node.outEdges:
+            if edge.tailNode not in nodes:
+                node.u += edge.tailNode.v * edge.weight
+            else:
+                n_e_dict[node] = edge
+                sigma_lnw += edge.lnWeight
+    c = math.exp(-sigma_lnw)/(1-math.exp(-sigma_lnw))
+    for node in nodes:
+        node.v = (node.u + n_e_dict[node].tailNode.u * n_e_dict[node].weight) * (1 + c)
+
 
 
 if __name__ == '__main__':
@@ -124,10 +146,10 @@ if __name__ == '__main__':
     v4 = EntityNode('v4', 'v4')
     v5 = EntityNode('v5', 'v5')
     v6 = EntityNode('v6', 'v6')
-    v7 = EntityNode('v7', 'v7')
-    v8 = EntityNode('v8', 'v8')
-
-    v9 = EntityNode('v9', 'v9')
+    # v7 = EntityNode('v7', 'v7')
+    # v8 = EntityNode('v8', 'v8')
+    #
+    # v9 = EntityNode('v9', 'v9')
 
     #添加边
     e1 = EquityEdge(v1, v0, 0.0449)
@@ -138,24 +160,24 @@ if __name__ == '__main__':
     e6 = EquityEdge(v1, v2, 0.9)
     e7 = EquityEdge(v6, v1, 0.9)
     e11 = EquityEdge(v2, v1, 0.1) #cycle
-    # e8 = EquityEdge(v6, v2, 0.1)
-    e8 = EquityEdge(v2, v6, 0.1)  # cycle
+    e8 = EquityEdge(v6, v2, 0.1)
+    # e8 = EquityEdge(v2, v6, 0.1)  # cycle
     e9 = EquityEdge(v1, v3, 0.202)
     e10 = EquityEdge(v2, v3, 0.78)
-    e12 = EquityEdge(v8, v7, 0.78)
-    e13 = EquityEdge(v7, v4, 0.06)
-    e14 = EquityEdge(v7, v5, 0.01)
-    e14 = EquityEdge(v7, v1, 0.01)
-
-    e8 = EquityEdge(v9, v6, 0.1)
+    # e12 = EquityEdge(v8, v7, 0.78)
+    # e13 = EquityEdge(v7, v4, 0.06)
+    # e14 = EquityEdge(v7, v5, 0.01)
+    # e14 = EquityEdge(v7, v1, 0.01)
+    #
+    # e8 = EquityEdge(v9, v6, 0.1)
 
     # 检验根节点对其他节点持股是否影响结果
     # _v = EntityNode('_v', '_v')
     # _e = EquityEdge(v0, _v, 0.5)
 
     print(levelOrder3(v0))
-    # for node in [v0, v1, v2, v3, v4, v5, v6]:
-    for node in [v0, v1, v2, v3, v4, v5, v6, v7, v8]:
+    for node in [v0, v1, v2, v3, v4, v5, v6]:
+    # for node in [v0, v1, v2, v3, v4, v5, v6, v7, v8]:
         print(node.name, node.v, node.key_l)
 
     # print(findCycle(v1))
